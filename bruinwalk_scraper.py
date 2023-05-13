@@ -293,16 +293,23 @@ def scrape_reviews(course_code):
 ###
 def scrape_courses(dept_code = None):
     
-    # create dataframe
-    col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
-    df = pd.DataFrame(columns = col_names)
+    try:
+        # save progress
+        df = pd.read_csv('progress.csv')
+    except:
+        # create dataframe
+        col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+        df = pd.DataFrame(columns = col_names)
     
     # get courses
     courses = get_courses(dept_code)
     
     # iterate through all courses and scrape reviews
-    for i in tqdm(courses):
-        df = pd.concat([df, scrape_reviews(i)]).reset_index(drop = True)
+    for i in tqdm(range(len(df), len(courses))):
+        df = pd.concat([df, scrape_reviews(courses[i])]).reset_index(drop = True)
+        # save progress every 1000 in case need to restart
+        if i % 1000 == 0:
+            df.to_csv('progress.csv', index = False)
         
     # drop duplicates
     df = df.drop_duplicates(keep = 'first').reset_index(drop = True)
