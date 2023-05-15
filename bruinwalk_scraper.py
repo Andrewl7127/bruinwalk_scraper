@@ -351,6 +351,9 @@ def sentiment_analysis(df):
         
     return df
 
+# scrape all courses (run only once or download .pkl)
+# scrape_all_courses()
+
 # scrape for stats department, code is 176
 df = scrape_courses('176')
 
