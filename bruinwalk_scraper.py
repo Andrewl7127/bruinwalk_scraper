@@ -222,7 +222,14 @@ def scrape_reviews(course_code):
 
                 # extract reviews
                 reviews = soup.find_all("div", class_="review reviewcard")
-
+                
+                # if no reviews
+                if len(reviews) == 0:
+                    
+                    # append to dataframe and increment index
+                    df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 0, 0]
+                    idx += 1
+                    
                 # iterate through all reviews
                 for j in reviews:
 
