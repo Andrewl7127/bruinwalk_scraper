@@ -332,7 +332,7 @@ def sentiment_analysis(df):
     sentiment_analysis = pipeline("sentiment-analysis")
 
     # sentiment analysis on review text, label and score using hugging face
-    for i in range(len(df)):
+    for i in tqdm(range(len(df))):
 
         text = df.at[i, 'Review Text']
         # if greater than character limit truncate down to max
