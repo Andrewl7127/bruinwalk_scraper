@@ -62,7 +62,7 @@ def scrape_all_courses():
 
     # export as pkl
     with open('courses.pkl', 'wb') as file:
-        pickle.dump(my_list, file)
+        pickle.dump(all_courses, file)
 
     return all_courses
 
