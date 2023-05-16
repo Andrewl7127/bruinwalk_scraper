@@ -325,7 +325,7 @@ def scrape_courses(dept_code = None):
     courses = list(courses)
     
     # iterate through all courses and scrape reviews
-    for i in tqdm(range(pkl_idx[0], len(courses))):
+    for i in tqdm(range(int(pkl_idx[0]), len(courses))):
         df = pd.concat([df, scrape_reviews(courses[i])]).reset_index(drop = True)
         # save progress every 1000 in case need to restart
         if i % 100 == 0:
