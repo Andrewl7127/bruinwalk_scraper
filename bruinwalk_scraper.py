@@ -149,7 +149,7 @@ def get_professors(course_code):
 def scrape_reviews(course_code):
     
     # create dataframe
-    col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+    col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
     df = pd.DataFrame(columns = col_names)
     idx = 0
     
@@ -173,7 +173,7 @@ def scrape_reviews(course_code):
         course_n = soup.find("div", class_="aggregate-header content-row").find('h2').get_text()
 
         # append to dataframe
-        df.loc[idx] = [course_c, course_n, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+        df.loc[idx] = [course_c, course_code, course_n, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
 
     else:
         # iterate through all professors
@@ -244,7 +244,7 @@ def scrape_reviews(course_code):
                     if len(reviews) == 0:
                         
                         # append to dataframe and increment index
-                        df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+                        df.loc[idx] = [course_c, course_code, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
                         idx += 1
                     
                     else:
@@ -302,12 +302,12 @@ def scrape_reviews(course_code):
                             review_downvote = int(j.find("span", class_="downvote-value").get_text())
 
                             # append to dataframe and increment index
-                            df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, quarter, year, grade, review_date, review_text, review_upvote, review_downvote]
+                            df.loc[idx] = [course_c, course_code, course_n, dep, prof, course_ratings, quarter, year, grade, review_date, review_text, review_upvote, review_downvote]
                             idx += 1
             except:
 
                 # append to dataframe and increment index
-                df.loc[idx] = [course_c, course_n, dep, prof, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+                df.loc[idx] = [course_c, course_code, course_n, dep, prof, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
                 idx += 1
     
     # replace N/A course ratings with N/A dictionary
@@ -335,22 +335,22 @@ def scrape_courses(dept_code = None):
             df = pd.read_csv('progress.csv')
         except:
             # create dataframe
-            col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+            col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
             df = pd.DataFrame(columns = col_names)
     else:
         # create dataframe
-        col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+        col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
         df = pd.DataFrame(columns = col_names)
         
     # get courses
     courses = get_courses(dept_code)
     
     # iterate through all courses and scrape reviews
-    for i in tqdm(range(len(df['Course Code'].unique()), len(courses))):
+    for i in tqdm(range(len(df['Course Code 2'].unique()), len(courses))):
         df = pd.concat([df, scrape_reviews(courses[i])]).reset_index(drop = True)
         # save progress every 1000 in case need to restart
         if i % 1000 == 0:
-            print('UNIQUE:', len(df['Course Code'].unique()))
+            print('UNIQUE:', len(df['Course Code 2'].unique()))
             df.to_csv('progress.csv', index = False)
         
     # drop duplicates
