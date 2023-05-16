@@ -309,6 +309,7 @@ def scrape_courses(dept_code = None):
             # open index
             with open('idx.pkl', 'rb') as file:
                 pkl_idx = pickle.load(file)
+                pkl_idx = list(pkl_idx)
         except:
             # create dataframe
             col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
@@ -321,12 +322,13 @@ def scrape_courses(dept_code = None):
         
     # get courses
     courses = get_courses(dept_code)
+    courses = list(courses)
     
     # iterate through all courses and scrape reviews
     for i in tqdm(range(pkl_idx[0], len(courses))):
         df = pd.concat([df, scrape_reviews(courses[i])]).reset_index(drop = True)
         # save progress every 1000 in case need to restart
-        if i % 10 == 0:
+        if i % 100 == 0:
             # save index
             with open('idx.pkl', 'wb') as file:
                 pickle.dump([i + 1], file)
