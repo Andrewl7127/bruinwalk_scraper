@@ -149,7 +149,7 @@ def get_professors(course_code):
 def scrape_reviews(course_code):
     
     # create dataframe
-    col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+    col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
     df = pd.DataFrame(columns = col_names)
     idx = 0
     
@@ -158,164 +158,137 @@ def scrape_reviews(course_code):
         
     # get professors
     professors = get_professors(course_code)
-    
-    if len(professors) == 0:
-        
-        # ping class page and get response, pass to soup 
-        url = f"{base_url}/classes/{course_code}"
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, "html.parser")
 
-        # extract course code
-        course_c = soup.find("span", class_="aggregate-type-badge").get_text()
+    # iterate through all professors
+    for i in professors:
+        try:
+            # get professor name
+            start = '/professors/'
+            end = f'/{course_code}/'
+            start_index = i.index(start) + len(start)
+            end_index = i.index(end)
+            prof = i[start_index:end_index].replace('-', ' ').title()
 
-        # extract course name
-        course_n = soup.find("div", class_="aggregate-header content-row").find('h2').get_text()
+            # ping professor page and get response, pass to soup 
+            url = f"{base_url}{i}"
+            response = requests.get(url)
+            soup = BeautifulSoup(response.text, "html.parser")
 
-        # append to dataframe
-        df.loc[idx] = [course_c, course_code, course_n, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+            # extract department name
+            dep = soup.find("div", class_="department-name").get_text().strip().replace('Department of ', '')
 
-    else:
-        # iterate through all professors
-        for i in professors:
-            try:
-                # get professor name
-                start = '/professors/'
-                end = f'/{course_code}/'
-                start_index = i.index(start) + len(start)
-                end_index = i.index(end)
-                prof = i[start_index:end_index].replace('-', ' ').title()
+            # extract course code
+            course_c = soup.find("span", class_="aggregate-type-badge").get_text()
 
-                # ping professor page and get response, pass to soup 
-                url = f"{base_url}{i}"
+            # extract course name
+            course_n = soup.find("div", class_="aggregate-header content-row").find('h2').get_text()
+
+            # extract overall score and users
+            overall_score = soup.find("div", class_="overall-score").get_text().replace(' ', '')
+            replacements = ['\n', '\t', ' ', 'OverallRating', 'Basedon', 'Users', 'User']
+            overall_users = soup.find("div", class_="overall-text").get_text()
+            for j in replacements:
+                overall_users = overall_users.replace(j, '')
+
+            # extract specific ratings
+            ratings = soup.find_all("div", class_="ind-rating")
+            options = ['Easiness', 'Clarity', 'Workload', 'Helpfulness']
+            course_ratings = {'Overall' : math.nan, 'Users': math.nan}
+            if overall_score != 'N/A':
+                course_ratings['Overall'] = float(overall_score)
+            if overall_users != '':
+                course_ratings['Users'] = float(overall_users)
+            for j in options:
+                course_ratings[j] = math.nan
+            replacements = [' 5 ', '\n', ' ', '\t', '/']
+            for j in ratings[:4]:
+                val = j.find("span", class_="value").get_text()
+                for k in replacements:
+                    val = val.replace(k, '')
+                for l in options:
+                    if l in j.get_text():
+                        if val != 'N/A':
+                            course_ratings[l] = float(val)
+            course_ratings = str(course_ratings)
+
+            # iterate through all pages
+            paginator = int(soup.find("div", class_="paginator").find_all("span")[1].get_text().replace('1 of ', ''))
+            for page in range(paginator):
+
+                # go to page and pass to soup
+                url = f"{base_url}{i}?page={page+1}"
                 response = requests.get(url)
                 soup = BeautifulSoup(response.text, "html.parser")
 
-                # extract department name
-                dep = soup.find("div", class_="department-name").get_text().strip().replace('Department of ', '')
-
-                # extract course code
-                course_c = soup.find("span", class_="aggregate-type-badge").get_text()
-
-                # extract course name
-                course_n = soup.find("div", class_="aggregate-header content-row").find('h2').get_text()
-
-                # extract overall score and users
-                overall_score = soup.find("div", class_="overall-score").get_text().replace(' ', '')
-                replacements = ['\n', '\t', ' ', 'OverallRating', 'Basedon', 'Users', 'User']
-                overall_users = soup.find("div", class_="overall-text").get_text()
-                for j in replacements:
-                    overall_users = overall_users.replace(j, '')
-
-                # extract specific ratings
-                ratings = soup.find_all("div", class_="ind-rating")
-                options = ['Easiness', 'Clarity', 'Workload', 'Helpfulness']
-                course_ratings = {'Overall' : math.nan, 'Users': math.nan}
-                if overall_score != 'N/A':
-                    course_ratings['Overall'] = float(overall_score)
-                if overall_users != '':
-                    course_ratings['Users'] = float(overall_users)
-                for j in options:
-                    course_ratings[j] = math.nan
-                replacements = [' 5 ', '\n', ' ', '\t', '/']
-                for j in ratings[:4]:
-                    val = j.find("span", class_="value").get_text()
-                    for k in replacements:
-                        val = val.replace(k, '')
-                    for l in options:
-                        if l in j.get_text():
-                            if val != 'N/A':
-                                course_ratings[l] = float(val)
-                course_ratings = str(course_ratings)
-
-                # iterate through all pages
-                paginator = int(soup.find("div", class_="paginator").find_all("span")[1].get_text().replace('1 of ', ''))
-                for page in range(paginator):
-
-                    # go to page and pass to soup
-                    url = f"{base_url}{i}?page={page+1}"
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.text, "html.parser")
-
-                    # extract reviews
-                    reviews = soup.find_all("div", class_="review reviewcard")
+                # extract reviews
+                reviews = soup.find_all("div", class_="review reviewcard")
+                
+                # if no reviews
+                if len(reviews) == 0:
                     
-                    # if no reviews
-                    if len(reviews) == 0:
-                        
+                    # append to dataframe and increment index
+                    df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+                    idx += 1
+                
+                else:
+                    # iterate through all reviews
+                    for j in reviews:
+
+                        # extract quarter and grade element
+                        quarter_and_grade = j.select('div[class^="row collapse"]')[0]
+                        quarter_year = quarter_and_grade.select('div')[0].get_text()
+                        grade = quarter_and_grade.select('div')[1].get_text()
+
+                        # extract quarter and year
+                        replacements = ['\n', ' ', 'Quarter:']
+                        for k in replacements:
+                            quarter_year = quarter_year.replace(k, '')
+                        if quarter_year == 'N/A':
+                            quarter = 'N/A'
+                            year = 'N/A'
+                        else:
+                            quarter_year = re.sub(r'([a-zA-Z])(\d)', r'\1 \2', quarter_year).split(' ')
+                            quarter = quarter_year[0]
+                            year = quarter_year[1]
+
+                        # extract grade
+                        replacements = ['\n', ' ', 'Grade:']
+                        for k in replacements:
+                            grade = grade.replace(k, '')
+
+                        # extract review date
+                        review_date = j.select('span[class^="date"]')[0].get_text()
+                        replacements = ['\n', ' ']
+                        for k in replacements:
+                            review_date = review_date.replace(k, '')
+                        if '.' in review_date:
+                            index = review_date.index('.')
+                            review_date = review_date[:index][:3] + review_date[index:]
+                        # convert to datetime, standardize formatting
+                        input_formats = ["%b.%d,%Y", "%B%d,%Y"]
+                        for k in input_formats:
+                            try:
+                                review_date = datetime.strptime(review_date, k)
+                                break
+                            except:
+                                pass
+                        output_format = "%m/%d/%Y"
+                        review_date = review_date.strftime(output_format)
+
+                        # extract review text
+                        review_text = j.find("div", class_="expand-area review-paragraph").get_text().replace('\n', '')
+
+                        # extract review upvote value
+                        review_upvote = int(j.find("span", class_="upvote-value").get_text())
+
+                        # extract review downvote value
+                        review_downvote = int(j.find("span", class_="downvote-value").get_text())
+
                         # append to dataframe and increment index
-                        df.loc[idx] = [course_c, course_code, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+                        df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, quarter, year, grade, review_date, review_text, review_upvote, review_downvote]
                         idx += 1
-                    
-                    else:
-                        # iterate through all reviews
-                        for j in reviews:
-
-                            # extract quarter and grade element
-                            quarter_and_grade = j.select('div[class^="row collapse"]')[0]
-                            quarter_year = quarter_and_grade.select('div')[0].get_text()
-                            grade = quarter_and_grade.select('div')[1].get_text()
-
-                            # extract quarter and year
-                            replacements = ['\n', ' ', 'Quarter:']
-                            for k in replacements:
-                                quarter_year = quarter_year.replace(k, '')
-                            if quarter_year == 'N/A':
-                                quarter = 'N/A'
-                                year = 'N/A'
-                            else:
-                                quarter_year = re.sub(r'([a-zA-Z])(\d)', r'\1 \2', quarter_year).split(' ')
-                                quarter = quarter_year[0]
-                                year = quarter_year[1]
-
-                            # extract grade
-                            replacements = ['\n', ' ', 'Grade:']
-                            for k in replacements:
-                                grade = grade.replace(k, '')
-
-                            # extract review date
-                            review_date = j.select('span[class^="date"]')[0].get_text()
-                            replacements = ['\n', ' ']
-                            for k in replacements:
-                                review_date = review_date.replace(k, '')
-                            if '.' in review_date:
-                                index = review_date.index('.')
-                                review_date = review_date[:index][:3] + review_date[index:]
-                            # convert to datetime, standardize formatting
-                            input_formats = ["%b.%d,%Y", "%B%d,%Y"]
-                            for k in input_formats:
-                                try:
-                                    review_date = datetime.strptime(review_date, k)
-                                    break
-                                except:
-                                    pass
-                            output_format = "%m/%d/%Y"
-                            review_date = review_date.strftime(output_format)
-
-                            # extract review text
-                            review_text = j.find("div", class_="expand-area review-paragraph").get_text().replace('\n', '')
-
-                            # extract review upvote value
-                            review_upvote = int(j.find("span", class_="upvote-value").get_text())
-
-                            # extract review downvote value
-                            review_downvote = int(j.find("span", class_="downvote-value").get_text())
-
-                            # append to dataframe and increment index
-                            df.loc[idx] = [course_c, course_code, course_n, dep, prof, course_ratings, quarter, year, grade, review_date, review_text, review_upvote, review_downvote]
-                            idx += 1
-            except:
-
-                # append to dataframe and increment index
-                df.loc[idx] = [course_c, course_code, course_n, dep, prof, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
-                idx += 1
-    
-    # replace N/A course ratings with N/A dictionary
-    options = ['Easiness', 'Clarity', 'Workload', 'Helpfulness']
-    course_ratings = {'Overall' : math.nan, 'Users': math.nan}
-    for i in options:
-        course_ratings[i] = math.nan
-    df['Course Ratings'] = df['Course Ratings'].replace('N/A', str(course_ratings))
+        except:
+            pass
 
     # drop duplicates
     df = df.drop_duplicates(keep = 'first').reset_index(drop = True)
@@ -331,26 +304,33 @@ def scrape_courses(dept_code = None):
     
     if dept_code == None:
         try:
-            # save progress
+            # open progress
             df = pd.read_csv('progress.csv')
+            # open index
+            with open('idx.pkl', 'rb') as file:
+                pkl_idx = pickle.load(file)
         except:
             # create dataframe
-            col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+            col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
             df = pd.DataFrame(columns = col_names)
+            pkl_idx = [0]
     else:
         # create dataframe
-        col_names = ['Course Code', 'Course Code 2', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
+        col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
         df = pd.DataFrame(columns = col_names)
         
     # get courses
     courses = get_courses(dept_code)
     
     # iterate through all courses and scrape reviews
-    for i in tqdm(range(len(df['Course Code 2'].unique()), len(courses))):
+    for i in tqdm(range(pkl_idx[0], len(courses))):
         df = pd.concat([df, scrape_reviews(courses[i])]).reset_index(drop = True)
         # save progress every 1000 in case need to restart
-        if i % 1000 == 0:
-            print('UNIQUE:', len(df['Course Code 2'].unique()))
+        if i % 10 == 0:
+            # save index
+            with open('idx.pkl', 'wb') as file:
+                pickle.dump([i + 1], file)
+            # export progress to csv
             df.to_csv('progress.csv', index = False)
         
     # drop duplicates
