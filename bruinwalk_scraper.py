@@ -319,6 +319,7 @@ def scrape_courses(dept_code = None):
         # create dataframe
         col_names = ['Course Code', 'Course Name', 'Department', 'Professor', 'Course Ratings', 'Quarter', 'Year', 'Grade', 'Review Date', 'Review Text', 'Review Upvote', 'Review Downvote']
         df = pd.DataFrame(columns = col_names)
+        pkl_idx = [0]
         
     # get courses
     courses = get_courses(dept_code)
