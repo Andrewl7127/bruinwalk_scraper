@@ -193,13 +193,13 @@ def scrape_reviews(course_code):
             # extract specific ratings
             ratings = soup.find_all("div", class_="ind-rating")
             options = ['Easiness', 'Clarity', 'Workload', 'Helpfulness']
-            course_ratings = {'Overall' : math.nan, 'Users': math.nan}
+            course_ratings = {'Overall' : np.nan, 'Users': np.nan}
             if overall_score != 'N/A':
                 course_ratings['Overall'] = float(overall_score)
             if overall_users != '':
                 course_ratings['Users'] = float(overall_users)
             for j in options:
-                course_ratings[j] = math.nan
+                course_ratings[j] = np.nan
             replacements = [' 5 ', '\n', ' ', '\t', '/']
             for j in ratings[:4]:
                 val = j.find("span", class_="value").get_text()
@@ -227,7 +227,7 @@ def scrape_reviews(course_code):
                 if len(reviews) == 0:
                     
                     # append to dataframe and increment index
-                    df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', math.nan, math.nan]
+                    df.loc[idx] = [course_c, course_n, dep, prof, course_ratings, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
                     idx += 1
                 
                 else:
@@ -244,8 +244,8 @@ def scrape_reviews(course_code):
                         for k in replacements:
                             quarter_year = quarter_year.replace(k, '')
                         if quarter_year == 'N/A':
-                            quarter = 'N/A'
-                            year = 'N/A'
+                            quarter = np.nan
+                            year = np.nan
                         else:
                             quarter_year = re.sub(r'([a-zA-Z])(\d)', r'\1 \2', quarter_year).split(' ')
                             quarter = quarter_year[0]
@@ -255,6 +255,8 @@ def scrape_reviews(course_code):
                         replacements = ['\n', ' ', 'Grade:']
                         for k in replacements:
                             grade = grade.replace(k, '')
+                        if grade == 'N/A':
+                            grade = np.nan
 
                         # extract review date
                         review_date = j.select('span[class^="date"]')[0].get_text()
@@ -353,7 +355,7 @@ def sentiment_analysis(df):
     for i in tqdm(range(len(df))):
         try:
             text = df.at[i, 'Review Text']
-            
+
             # if greater than character limit truncate down to max
             if len(text) > 512:
                 text = text[:512]
@@ -364,9 +366,11 @@ def sentiment_analysis(df):
             df.at[i, 'Review Sentiment Score'] = sentiment_results[0]["score"]
 
         except:
-            pass
+            df.at[i, 'Review Sentiment Label'] = np.nan
+            df.at[i, 'Review Sentiment Score'] = np.nan
         
     return df
+
 
 # scrape all courses (run only once or download .pkl)
 # scrape_all_courses()
