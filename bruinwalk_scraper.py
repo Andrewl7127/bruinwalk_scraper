@@ -349,10 +349,10 @@ def sentiment_analysis(df):
     sentiment_analysis = pipeline("sentiment-analysis")
 
     # sentiment analysis on review text, label and score using hugging face
-    for i in range(len(df)):
-
-        text = df.at[i, 'Review Text']
-        if text != 'N/A':
+    for i in tqdm(range(len(df))):
+        try:
+            text = df.at[i, 'Review Text']
+            
             # if greater than character limit truncate down to max
             if len(text) > 512:
                 text = text[:512]
@@ -362,9 +362,8 @@ def sentiment_analysis(df):
             df.at[i, 'Review Sentiment Label'] = sentiment_results[0]["label"]
             df.at[i, 'Review Sentiment Score'] = sentiment_results[0]["score"]
 
-        else:
-            df.at[i, 'Review Sentiment Label'] = math.nan
-            df.at[i, 'Review Sentiment Score'] = math.nan
+        except:
+            pass
         
     return df
 
