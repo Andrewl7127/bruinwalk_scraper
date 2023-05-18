@@ -11,13 +11,13 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import re
 import math
 from tqdm import tqdm
 import pickle
-import numpy as np
-from transformers import pipeline
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 ###
 # Function to scrape all courses and export as pkl
@@ -350,25 +350,29 @@ def scrape_courses(dept_code = None):
 ###
 def sentiment_analysis(df):
     
-    sentiment_analysis = pipeline("sentiment-analysis")
+    analyzer = SentimentIntensityAnalyzer()
 
     # sentiment analysis on review text, label and score using hugging face
     for i in tqdm(range(len(df))):
         try:
-            text = df.at[i, 'Review Text']
+            # extract text
+            text = df.at[i, 'review_text']
 
-            # if greater than character limit truncate down to max
-            if len(text) > 512:
-                text = text[:512]
-
-            # perform sentiment analysis
-            sentiment_results = sentiment_analysis(text)
-            df.at[i, 'Review Sentiment Label'] = sentiment_results[0]["label"]
-            df.at[i, 'Review Sentiment Score'] = sentiment_results[0]["score"]
+            # perform sentiment analysis, get compound score
+            compound = analyzer.polarity_scores(text)['compound']
+            df.at[i, 'review_sentiment_score'] = compound
+            # generate label off of compound score
+            if compound >= 0.05:
+                label = "Positive"
+            elif compound <= -0.05:
+                label = "Negative"
+            else:
+                label = "Neutral"
+            df.at[i, 'review_sentiment_label'] = label
 
         except:
-            df.at[i, 'Review Sentiment Label'] = np.nan
-            df.at[i, 'Review Sentiment Score'] = np.nan
+            df.at[i, 'review_sentiment_score'] = np.nan
+            df.at[i, 'review_sentiment_label'] = np.nan
         
     return df
 
