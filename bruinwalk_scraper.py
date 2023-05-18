@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+from numpy import nan
 from datetime import datetime
 import re
 import math
