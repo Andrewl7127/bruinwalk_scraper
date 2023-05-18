@@ -356,11 +356,11 @@ def sentiment_analysis(df):
     for i in tqdm(range(len(df))):
         try:
             # extract text
-            text = df.at[i, 'review_text']
+            text = df.at[i, 'Review Text']
 
             # perform sentiment analysis, get compound score
             compound = analyzer.polarity_scores(text)['compound']
-            df.at[i, 'review_sentiment_score'] = compound
+            df.at[i, 'Review Sentiment Score'] = compound
             # generate label off of compound score
             if compound >= 0.05:
                 label = "Positive"
@@ -368,11 +368,11 @@ def sentiment_analysis(df):
                 label = "Negative"
             else:
                 label = "Neutral"
-            df.at[i, 'review_sentiment_label'] = label
+            df.at[i, 'Review Sentiment Label'] = label
 
         except:
-            df.at[i, 'review_sentiment_score'] = np.nan
-            df.at[i, 'review_sentiment_label'] = np.nan
+            df.at[i, 'Review Sentiment Score'] = np.nan
+            df.at[i, 'Review Sentiment Label'] = np.nan
         
     return df
 
